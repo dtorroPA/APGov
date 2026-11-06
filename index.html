@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gerrymander Tour</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;600;800&display=swap">
+<style>
+/* Layout: a night-sky mission board. The glowing map sits center stage; setup on the left, scoreboard on the right, classroom notes below. */
+:root {
+  color-scheme: dark;
+  --void: #0A1029;
+  --deep: #121B42;
+  --panel: #18235A;
+  --panel-2: #22306E;
+  --line: #33428A;
+  --ink: #F7F2E6;
+  --muted: #A9B3DC;
+  --sun: #FFCB47;
+  --A: #FFB627;
+  --B: #A27BFF;
+  --display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 18px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: radial-gradient(120% 80% at 50% -10%, #1F2C68 0%, var(--deep) 45%, var(--void) 100%) fixed, var(--void);
+  overflow-x: hidden;
+}
+.sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.sky .stars { position: absolute; left: 0; top: 0; width: 2px; height: 2px; border-radius: 50%; }
+.sky .planet {
+  position: absolute; width: 520px; height: 520px; right: -200px; bottom: -300px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3B4FA8 0%, #26357A 45%, #172159 75%);
+  box-shadow: 0 0 120px 30px rgba(80, 110, 255, .18);
+}
+.sky .moon {
+  position: absolute; width: 70px; height: 70px; right: 9%; top: 70px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFE08A, #FFB627 70%);
+  box-shadow: 0 0 60px 10px rgba(255, 190, 60, .25);
+  opacity: .85;
+  animation: float 9s ease-in-out infinite;
+}
+@media (max-width: 720px) { .sky .moon { display: none; } }
+@keyframes float { 50% { transform: translateY(-14px); } }
+@keyframes twinkle { 50% { opacity: .35; } }
+
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 1360px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+  display: grid; gap: 22px;
+}
+header { display: grid; gap: 6px; }
+.eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--sun); }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 5vw, 56px); line-height: 1; margin: 0; text-wrap: balance; }
+h1 span { color: var(--sun); }
+.lede { margin: 0; color: var(--muted); max-width: 64ch; font-size: 16px; }
+h2 { font-family: var(--display); font-weight: 800; font-size: 22px; line-height: 1.1; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0; }
+
+.board {
+  display: grid; gap: 22px;
+  grid-template-columns: 290px minmax(0, 1fr) 310px;
+  grid-template-areas: "controls map results";
+  align-items: start;
+}
+@media (max-width: 1180px) {
+  .board { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "map map" "controls results"; }
+}
+@media (max-width: 720px) {
+  .board { grid-template-columns: minmax(0, 1fr); grid-template-areas: "map" "controls" "results"; }
+}
+.panel {
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 18px;
+  display: grid; gap: 16px;
+  min-width: 0;
+  backdrop-filter: blur(6px);
+}
+#controls { grid-area: controls; }
+#results { grid-area: results; }
+#mapArea { grid-area: map; display: grid; gap: 10px; min-width: 0; }
+
+.field { display: grid; gap: 6px; }
+.field label, .legend-label { font-weight: 800; font-size: 13px; }
+.fan-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 10px; }
+.swatch { width: 22px; height: 22px; border-radius: 50%; position: relative; box-shadow: inset -3px -3px 0 rgba(0,0,0,.18); }
+.swatch.sq { border-radius: 7px; }
+select, button { font: inherit; color: var(--ink); }
+select {
+  width: 100%; min-width: 0;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 9px 12px; font-weight: 600;
+}
+select:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.vs { text-align: center; font-family: var(--display); font-weight: 800; color: var(--muted); font-size: 13px; letter-spacing: .1em; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+input[type="range"] { width: 100%; accent-color: var(--sun); }
+.range-ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.goals { display: grid; gap: 8px; border: 0; padding: 0; margin: 0; }
+.goals legend { padding: 0; margin-bottom: 8px; }
+.goal { position: relative; display: block; cursor: pointer; }
+.goal input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.goal .card {
+  display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: center;
+  padding: 10px 12px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--panel-2);
+  transition: border-color .2s, transform .2s, background .2s;
+}
+.goal:hover .card { transform: translateY(-1px); border-color: var(--muted); }
+.goal input:checked + .card { border-color: var(--sun); background: color-mix(in srgb, var(--sun) 14%, var(--panel-2)); }
+.goal input:focus-visible + .card { outline: 3px solid var(--sun); outline-offset: 2px; }
+.goal .icon { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; background: var(--deep); }
+.goal .icon svg { width: 20px; height: 20px; }
+.goal b { display: block; font-size: 14px; line-height: 1.2; }
+.goal small { display: block; color: var(--muted); font-size: 12px; line-height: 1.3; }
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  flex: 1 1 auto; border: 0; border-radius: 999px; padding: 10px 16px; cursor: pointer; font-weight: 800;
+  background: var(--sun); color: var(--void); box-shadow: 0 4px 0 #C9921A;
+  transition: transform .1s, box-shadow .1s;
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #C9921A; }
+.btn.ghost { background: var(--panel-2); color: var(--ink); box-shadow: 0 4px 0 var(--void); border: 1px solid var(--line); }
+.btn.ghost:active { box-shadow: 0 1px 0 var(--void); }
+
+.map-frame { position: relative; width: 100%; }
+#map { display: block; width: 100%; touch-action: manipulation; cursor: crosshair; }
+.map-bar { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; min-height: 28px; }
+#caption { font-size: 14px; color: var(--muted); min-width: 0; }
+#caption strong { color: var(--ink); }
+.status { display: flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 800; color: var(--sun); font-variant-numeric: tabular-nums; }
+.status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sun); animation: twinkle .8s infinite; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend .swatch { width: 14px; height: 14px; }
+.legend .swatch.sq { border-radius: 4px; }
+
+.verdict { font-family: var(--display); font-weight: 600; font-size: 20px; line-height: 1.25; margin: 0; text-wrap: balance; }
+.verdict .a { color: var(--A); } .verdict .b { color: var(--B); }
+.votebar { display: flex; height: 16px; border-radius: 999px; overflow: hidden; background: var(--deep); position: relative; }
+.votebar i { display: block; height: 100%; transition: width .5s cubic-bezier(.2,.9,.3,1.2); }
+.votebar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .6; }
+.vote-labels { display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.seats { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; }
+.seat {
+  aspect-ratio: 1; max-width: 100%; border-radius: 50%; position: relative; background: var(--muted);
+  box-shadow: inset -3px -3px 0 rgba(0,0,0,.2);
+}
+.seat.sq { border-radius: 28%; }
+.seat::before, .seat::after {
+  content: ""; position: absolute; top: 34%; width: 22%; height: 26%; border-radius: 50%; background: #fff;
+  box-shadow: inset 0 -2px 0 2px #0A1029;
+}
+.seat::before { left: 22%; } .seat::after { right: 22%; }
+.seat.pop { animation: pop .45s cubic-bezier(.3,1.6,.5,1); }
+@keyframes pop { 0% { transform: scale(.4); } 100% { transform: scale(1); } }
+.seat-score { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--display); font-weight: 800; }
+.seat-score .big { font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+
+.metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.metric { background: var(--panel-2); border-radius: 14px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.metric .k { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.metric .v { font-family: var(--display); font-weight: 800; font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.metric .s { font-size: 12px; color: var(--muted); line-height: 1.3; }
+.explain { background: var(--deep); border-radius: 14px; padding: 12px 14px; font-size: 14px; display: grid; gap: 4px; }
+.explain b { color: var(--sun); font-family: var(--display); font-size: 16px; }
+.explain p { margin: 0; }
+
+.districts { display: grid; gap: 10px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 900px) { .districts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.dcard {
+  background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1.5px solid var(--line); border-radius: 14px;
+  padding: 10px 12px; display: grid; gap: 6px; min-width: 0; transition: border-color .2s, transform .2s;
+}
+.dcard.hot { border-color: var(--sun); transform: translateY(-2px); }
+.dcard .top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.dcard .num { font-family: var(--display); font-weight: 800; font-size: 18px; }
+.tag { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--deep); color: var(--muted); white-space: nowrap; }
+.tag.toss { background: var(--sun); color: var(--void); }
+.tag.packed { background: var(--ink); color: var(--void); }
+.minibar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--deep); }
+.minibar i { display: block; height: 100%; transition: width .3s; }
+.dcard .counts { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.dcard .winner { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.notes { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .notes { grid-template-columns: minmax(0, 1fr); } }
+.notes .panel { align-content: start; }
+.notes dl { margin: 0; display: grid; gap: 10px; }
+.notes dt { font-weight: 800; }
+.notes dd { margin: 0; color: var(--muted); font-size: 14px; }
+.notes ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 14px; color: var(--muted); }
+.notes ol li::marker { color: var(--sun); font-weight: 800; }
+footer { color: var(--muted); font-size: 12.5px; text-align: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true"><div class="stars" id="stars"></div><div class="moon"></div><div class="planet"></div></div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">AP Government · Congress &amp; Redistricting</div>
+    <h1>Gerrymander <span>Tour</span></h1>
+    <p class="lede">A state of 270 music fans needs 10 congressional districts. Every district holds exactly 27 voters. The map-maker's goal decides who wins. Pick two fanbases, choose a goal, and watch the lines move.</p>
+  </header>
+
+  <div class="board">
+    <section class="panel" id="controls" aria-label="Set up the state">
+      <h2>Set up the state</h2>
+
+      <div class="field">
+        <label for="fanA">Fanbase A</label>
+        <div class="fan-row"><span class="swatch" id="swA"></span><select id="fanA"></select></div>
+        <div class="vs">VS</div>
+        <label for="fanB">Fanbase B</label>
+        <div class="fan-row"><span class="swatch sq" id="swB"></span><select id="fanB"></select></div>
+        <p class="hint" id="colorHint" hidden>Colors were adjusted so the two fanbases are easy to tell apart.</p>
+      </div>
+
+      <div class="field">
+        <label for="share">Statewide vote split</label>
+        <input type="range" id="share" min="35" max="65" step="1" value="52">
+        <div class="range-ends"><span id="shareA">A 52%</span><span id="shareB">B 48%</span></div>
+      </div>
+
+      <div class="field">
+        <label for="cluster">Where fans live</label>
+        <input type="range" id="cluster" min="0" max="100" step="5" value="70">
+        <div class="range-ends"><span>Mixed together</span><span>Clustered in towns</span></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn ghost" id="newState" type="button">New state</button>
+      </div>
+
+      <fieldset class="goals">
+        <legend class="legend-label">Map-maker's goal</legend>
+        <label class="goal"><input type="radio" name="goal" id="g-compact" value="compact" checked>
+          <span class="card"><span class="icon"><svg viewBox="0 0 20 20" fill="none" stroke="#F7F2E6" stroke-width="2"><rect x="3" y="3" width="14" height="14" rx="3"/><path d="M10 3v14M3 10h14"/></svg></span>
+          <span><b>Compact &amp; neutral</b><small>Tidy shapes. Ignores who lives where.</small></span></span></label>
+        <label class="goal"><input type="radio" name="goal" id="g-favorA" value="favorA">
+          <span class="card"><span class="icon"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="var(--A)"/></svg></span>
+          <span><b>Favor <span class="nameA">A</span></b><small>Pack and crack the other side.</small></span></span></label>
+        <label class="goal"><input type="radio" name="goal" id="g-favorB" value="favorB">
+          <span class="card"><span class="icon"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="4" fill="var(--B)"/></svg></span>
+          <span><b>Favor <span class="nameB">B</span></b><small>Pack and crack the other side.</small></span></span></label>
+        <label class="goal"><input type="radio" name="goal" id="g-competitive" value="competitive">
+          <span class="card"><span class="icon"><svg viewBox="0 0 20 20" fill="none" stroke="#FFCB47" stroke-width="2" stroke-linecap="round"><path d="M10 3v14M4 7l6-2 6 2M4 7l-2 5h4zM16 7l-2 5h4z"/></svg></span>
+          <span><b>Competitive</b><small>Make every district a close race.</small></span></span></label>
+        <label class="goal"><input type="radio" name="goal" id="g-proportional" value="proportional">
+          <span class="card"><span class="icon"><svg viewBox="0 0 20 20"><path d="M10 10V3a7 7 0 1 1-6.6 9.3z" fill="var(--A)"/><path d="M10 10 3.4 12.3A7 7 0 0 1 10 3z" fill="var(--B)"/></svg></span>
+          <span><b>Proportional</b><small>Seats match each side's share of votes.</small></span></span></label>
+      </fieldset>
+
+      <div class="btn-row">
+        <button class="btn" id="redraw" type="button">Redraw the map</button>
+      </div>
+    </section>
+
+    <section id="mapArea" aria-label="State map">
+      <div class="map-bar">
+        <div class="legend">
+          <span><i class="swatch" id="lgA"></i><span class="fansA">A</span></span>
+          <span><i class="swatch sq" id="lgB"></i><span class="fansB">B</span></span>
+          <span>Each blob = 1 voter</span>
+        </div>
+        <div class="status" id="status" hidden><span class="dot"></span><span id="statusText">Drawing districts</span></div>
+      </div>
+      <div class="map-frame"><canvas id="map" role="img" aria-label="Map of the state's voters and its 10 districts. District results are listed below the map."></canvas></div>
+      <div id="caption">Hover or tap a district to see who lives there.</div>
+    </section>
+
+    <section class="panel" id="results" aria-label="Election results" aria-live="polite">
+      <h2>Election night</h2>
+      <p class="verdict" id="verdict"></p>
+
+      <div class="field">
+        <h3>Popular vote</h3>
+        <div class="votebar"><i id="vbA"></i><i id="vbB"></i></div>
+        <div class="vote-labels"><span id="vlA"></span><span id="vlB"></span></div>
+      </div>
+
+      <div class="field">
+        <h3>Seats in Congress</h3>
+        <div class="seat-score"><span class="big" id="seatsA" style="color:var(--A)">0</span><span class="big" id="seatsB" style="color:var(--B)">0</span></div>
+        <div class="seats" id="seats"></div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric"><span class="k">Fair share</span><span class="v" id="mFair"></span><span class="s" id="mFairS"></span></div>
+        <div class="metric"><span class="k">Toss-ups</span><span class="v" id="mToss"></span><span class="s">Won with 15 of 27 votes or fewer</span></div>
+        <div class="metric"><span class="k">Efficiency gap</span><span class="v" id="mGap"></span><span class="s" id="mGapS"></span></div>
+        <div class="metric"><span class="k">District shapes</span><span class="v" id="mShape"></span><span class="s" id="mShapeS"></span></div>
+      </div>
+
+      <div class="explain" id="explain"></div>
+    </section>
+  </div>
+
+  <section aria-label="District results" style="display:grid;gap:12px">
+    <h2>District by district</h2>
+    <div class="districts" id="districts"></div>
+  </section>
+
+  <section class="notes" aria-label="Classroom notes">
+    <div class="panel">
+      <h2>Key terms</h2>
+      <dl>
+        <dt>Redistricting</dt><dd>Redrawing district lines after each census, every 10 years, so each district has about the same population.</dd>
+        <dt>Gerrymandering</dt><dd>Drawing district lines on purpose to help one party or group win more seats.</dd>
+        <dt>Packing</dt><dd>Squeezing the other side's voters into a few districts they win by huge margins.</dd>
+        <dt>Cracking</dt><dd>Splitting the other side's voters across many districts so they fall just short in each.</dd>
+        <dt>Wasted votes &amp; efficiency gap</dt><dd>A vote is "wasted" if it goes to a loser or is extra beyond the 14 a winner needs. The efficiency gap compares each side's wasted votes as a share of all votes.</dd>
+      </dl>
+    </div>
+    <div class="panel">
+      <h2>Supreme Court cases</h2>
+      <dl>
+        <dt>Baker v. Carr (1962)</dt><dd>Federal courts can hear challenges to unequal districts. Opened the door to "one person, one vote." That's why every district here has exactly 27 voters.</dd>
+        <dt>Shaw v. Reno (1993)</dt><dd>Districts drawn mainly by race must pass strict scrutiny under the Equal Protection Clause of the 14th Amendment.</dd>
+        <dt>Rucho v. Common Cause (2019)</dt><dd>Partisan gerrymandering claims are political questions that federal courts cannot decide. States, state courts, and Congress can still limit it.</dd>
+      </dl>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Set the split to 50% and switch between the two "Favor" goals. How many seats can the map-maker swing just by moving lines?</li>
+        <li>Pick "Competitive." If a few voters in each district changed their minds, how many seats could flip?</li>
+        <li>Every map keeps one person, one vote. Why doesn't equal population stop gerrymandering?</li>
+        <li>With fans clustered in towns, does the "neutral" map still favor one side? Why?</li>
+        <li>Compare the district shapes score across goals. Should states require compact districts?</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>Fanbases stand in for political parties. A classroom simulation, not affiliated with any artist.</footer>
+</div>
+<script>
+// ENGINE START
+const COLS = 18, ROWS = 15, N = COLS * ROWS, K = 10, SIZE = N / K, MAJ = Math.ceil(SIZE / 2);
+const NB = [];
+for (let i = 0; i < N; i++) {
+  const x = i % COLS, y = (i / COLS) | 0, l = [];
+  if (x > 0) l.push(i - 1);
+  if (x < COLS - 1) l.push(i + 1);
+  if (y > 0) l.push(i - COLS);
+  if (y < ROWS - 1) l.push(i + COLS);
+  NB.push(l);
+}
+
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// A smooth "where do the fans live" landscape plus per-person noise.
+function makeWorld(seed) {
+  const rng = mulberry32(seed);
+  const bumps = [];
+  const nb = 6 + Math.floor(rng() * 3);
+  for (let b = 0; b < nb; b++) {
+    bumps.push({ x: rng() * COLS, y: rng() * ROWS, s: 1.8 + rng() * 3.2, w: (b % 2 ? -1 : 1) * (0.6 + rng() * 0.8) });
+  }
+  const field = new Float64Array(N), noise = new Float64Array(N), phase = new Float64Array(N);
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < N; i++) {
+    const x = (i % COLS) + 0.5, y = ((i / COLS) | 0) + 0.5;
+    let f = 0;
+    for (const b of bumps) { const d2 = (x - b.x) ** 2 + (y - b.y) ** 2; f += b.w * Math.exp(-d2 / (2 * b.s * b.s)); }
+    field[i] = f; lo = Math.min(lo, f); hi = Math.max(hi, f);
+    noise[i] = rng(); phase[i] = rng() * Math.PI * 2;
+  }
+  for (let i = 0; i < N; i++) field[i] = (field[i] - lo) / (hi - lo || 1);
+  return { field, noise, phase };
+}
+
+// Exactly round(N * shareA) voters become fanbase A (1); the rest are fanbase B (0).
+function assignVoters(world, shareA, cluster) {
+  const score = new Float64Array(N);
+  for (let i = 0; i < N; i++) score[i] = cluster * world.field[i] + (1 - cluster) * world.noise[i];
+  const idx = Array.from({ length: N }, (_, i) => i).sort((p, q) => score[q] - score[p]);
+  const nA = Math.round(N * shareA);
+  const v = new Uint8Array(N);
+  for (let k = 0; k < nA; k++) v[idx[k]] = 1;
+  return v;
+}
+
+// Contiguous starting map: snake through the columns, 27 cells per district.
+function snakePartition() {
+  const dist = new Int8Array(N);
+  let k = 0;
+  for (let x = 0; x < COLS; x++) {
+    for (let yy = 0; yy < ROWS; yy++) {
+      const y = x % 2 ? ROWS - 1 - yy : yy;
+      dist[y * COLS + x] = Math.floor(k / SIZE); k++;
+    }
+  }
+  return dist;
+}
+
+const mark = new Int32Array(N);
+let stamp = 0;
+function connected(dist, d, start) {
+  stamp++;
+  const stack = [start]; mark[start] = stamp; let cnt = 1;
+  while (stack.length) {
+    const c = stack.pop();
+    const nb = NB[c];
+    for (let j = 0; j < nb.length; j++) {
+      const n = nb[j];
+      if (dist[n] === d && mark[n] !== stamp) { mark[n] = stamp; cnt++; stack.push(n); }
+    }
+  }
+  return cnt === SIZE;
+}
+
+function tally(dist, v) { const a = new Int32Array(K); for (let i = 0; i < N; i++) a[dist[i]] += v[i]; return a; }
+function cutEdges(dist) {
+  let c = 0;
+  for (let i = 0; i < N; i++) {
+    if ((i % COLS) < COLS - 1 && dist[i] !== dist[i + 1]) c++;
+    if (i + COLS < N && dist[i] !== dist[i + COLS]) c++;
+  }
+  return c;
+}
+
+const sig = (z) => 1 / (1 + Math.exp(-z));
+function energy(mode, a, cut, target) {
+  let E = 0;
+  if (mode === 'compact') return cut;
+  if (mode === 'favorA' || mode === 'favorB') {
+    for (let d = 0; d < K; d++) {
+      const f = mode === 'favorA' ? a[d] : SIZE - a[d];
+      E -= 10 * sig((f - (MAJ - 0.5)) * 1.6);       // win seats
+      if (f < MAJ) E -= (MAJ - 1 - f) * 0.6;         // pack the other side where you lose
+      else E += Math.max(0, f - (MAJ + 2)) * 0.8;    // don't waste your own votes
+    }
+    return E + 0.2 * cut;
+  }
+  if (mode === 'competitive') {
+    for (let d = 0; d < K; d++) E += (a[d] - (MAJ - 0.5)) ** 2;
+    return E + 0.25 * cut;
+  }
+  if (mode === 'proportional') {
+    let S = 0, safe = 0;
+    for (let d = 0; d < K; d++) { S += sig((a[d] - (MAJ - 0.5)) * 1.6); safe += Math.min(Math.abs(a[d] - (MAJ - 0.5)), 4.5); }
+    return 12 * (S - target) ** 2 - 0.4 * safe + 0.25 * cut;
+  }
+  return cut;
+}
+
+function createAnnealer(dist, v, mode, iters) {
+  const target = Math.round(K * v.reduce((s, x) => s + x, 0) / N);
+  const T0 = mode === 'compact' ? 1.5 : 3, T1 = 0.04;
+  let a = tally(dist, v), cut = cutEdges(dist), E = energy(mode, a, cut, target);
+  let best = E; const bestDist = dist.slice();
+  let it = 0;
+  const cand = new Int32Array(N);
+  function step(n) {
+    const end = Math.min(iters, it + n);
+    for (; it < end; it++) {
+      const T = T0 * Math.pow(T1 / T0, it / iters);
+      const c = (Math.random() * N) | 0, X = dist[c];
+      const nb = NB[c];
+      const Y = dist[nb[(Math.random() * nb.length) | 0]];
+      if (Y === X) continue;
+      let m = 0;
+      for (let i = 0; i < N; i++) {
+        if (dist[i] !== Y) continue;
+        const ni = NB[i];
+        for (let j = 0; j < ni.length; j++) if (dist[ni[j]] === X) { cand[m++] = i; break; }
+      }
+      if (!m) continue;
+      const d = cand[(Math.random() * m) | 0];
+      dist[c] = Y; dist[d] = X;
+      if (!connected(dist, X, d) || !connected(dist, Y, c)) { dist[c] = X; dist[d] = Y; continue; }
+      const dv = v[c] - v[d];
+      a[X] -= dv; a[Y] += dv;
+      const cut2 = cutEdges(dist);
+      const E2 = energy(mode, a, cut2, target);
+      if (E2 <= E || Math.random() < Math.exp((E - E2) / T)) {
+        E = E2; cut = cut2;
+        if (E < best - 1e-9) { best = E; bestDist.set(dist); }
+      } else {
+        a[X] += dv; a[Y] -= dv; dist[c] = X; dist[d] = Y;
+      }
+    }
+    return it >= iters;
+  }
+  function finish() { dist.set(bestDist); }
+  return { step, finish, get progress() { return it / iters; } };
+}
+// ENGINE END
+// APP START
+const ARTISTS = [
+  { id: 'taylor', name: 'Taylor Swift', fans: 'Swifties', color: '#FFB627' },
+  { id: 'olivia', name: 'Olivia Rodrigo', fans: 'Livies', color: '#A27BFF' },
+  { id: 'chappell', name: 'Chappell Roan', fans: 'Chappell fans', color: '#FF5FA8' },
+  { id: 'drake', name: 'Drake', fans: 'Drake fans', color: '#38D6E3' },
+  { id: 'kendrick', name: 'Kendrick Lamar', fans: 'Kendrick fans', color: '#FF5A4E' },
+  { id: 'billie', name: 'Billie Eilish', fans: 'Billie fans', color: '#A8E85F' },
+  { id: 'badbunny', name: 'Bad Bunny', fans: 'Bad Bunny fans', color: '#4C8DFF' },
+  { id: 'beyonce', name: 'Beyoncé', fans: 'BeyHive', color: '#F3E7D3' },
+  { id: 'sabrina', name: 'Sabrina Carpenter', fans: 'Sabrina fans', color: '#FF9E7A' },
+  { id: 'sza', name: 'SZA', fans: 'SZA fans', color: '#3FE0A5' },
+  { id: 'morgan', name: 'Morgan Wallen', fans: 'Morgan Wallen fans', color: '#D8A46A' },
+];
+const FALLBACK = ['#4C8DFF', '#FFB627', '#FF5FA8', '#A8E85F', '#38D6E3', '#A27BFF'];
+const ITERS = 120000;
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const $ = (id) => document.getElementById(id);
+const hex2rgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const rgbDist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+const mix = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t];
+const css = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+
+const S = {
+  a: 'taylor', b: 'olivia', share: 0.52, cluster: 0.7, mode: 'compact',
+  seed: (Math.random() * 1e9) | 0,
+};
+let world, voters, dist, job = null, stats = null;
+let colA = hex2rgb('#FFB627'), colB = hex2rgb('#A27BFF');
+const LAND = hex2rgb('#26346E'), VOID = hex2rgb('#0A1029'), CREAM = hex2rgb('#F7F2E6');
+const fill = new Float32Array(N * 3).fill(0);
+let hover = -1, pointer = null;
+
+const artist = (id) => ARTISTS.find((x) => x.id === id);
+const fansA = () => artist(S.a).fans, fansB = () => artist(S.b).fans;
+
+// ---------- Setup controls ----------
+for (const sel of [$('fanA'), $('fanB')]) {
+  for (const ar of ARTISTS) {
+    const o = document.createElement('option');
+    o.value = ar.id; o.textContent = `${ar.fans} (${ar.name})`;
+    sel.appendChild(o);
+  }
+}
+$('fanA').value = S.a; $('fanB').value = S.b;
+
+function applyColors() {
+  colA = hex2rgb(artist(S.a).color);
+  let b = artist(S.b).color;
+  const adjusted = rgbDist(colA, hex2rgb(b)) < 120;
+  if (adjusted) b = FALLBACK.slice().sort((p, q) => rgbDist(colA, hex2rgb(q)) - rgbDist(colA, hex2rgb(p)))[0];
+  colB = hex2rgb(b);
+  $('colorHint').hidden = !adjusted;
+  const root = document.documentElement.style;
+  root.setProperty('--A', artist(S.a).color);
+  root.setProperty('--B', b);
+  for (const id of ['swA', 'lgA']) $(id).style.background = 'var(--A)';
+  for (const id of ['swB', 'lgB']) $(id).style.background = 'var(--B)';
+  document.querySelectorAll('.nameA,.fansA').forEach((e) => (e.textContent = fansA()));
+  document.querySelectorAll('.nameB,.fansB').forEach((e) => (e.textContent = fansB()));
+  updateShareLabels();
+}
+function updateShareLabels() {
+  const p = Math.round(S.share * 100);
+  $('shareA').textContent = `${fansA()} ${p}%`;
+  $('shareB').textContent = `${fansB()} ${100 - p}%`;
+}
+
+function onFanChange(which) {
+  const other = which === 'a' ? 'b' : 'a';
+  const val = $(which === 'a' ? 'fanA' : 'fanB').value;
+  if (val === S[other]) { S[other] = S[which]; $(other === 'a' ? 'fanA' : 'fanB').value = S[other]; }
+  S[which] = val;
+  applyColors();
+  refreshStats(true);
+}
+$('fanA').addEventListener('change', () => onFanChange('a'));
+$('fanB').addEventListener('change', () => onFanChange('b'));
+
+$('share').addEventListener('input', (e) => {
+  S.share = e.target.value / 100; updateShareLabels();
+  voters = assignVoters(world, S.share, S.cluster); startJob();
+});
+$('cluster').addEventListener('input', (e) => {
+  S.cluster = e.target.value / 100;
+  voters = assignVoters(world, S.share, S.cluster); startJob();
+});
+$('newState').addEventListener('click', () => {
+  S.seed = (Math.random() * 1e9) | 0;
+  world = makeWorld(S.seed);
+  voters = assignVoters(world, S.share, S.cluster); startJob();
+});
+document.querySelectorAll('input[name="goal"]').forEach((r) => r.addEventListener('change', () => {
+  S.mode = r.value; startJob();
+}));
+$('redraw').addEventListener('click', () => startJob());
+
+// ---------- Optimizer job ----------
+let jobTimer = null;
+function startJob() {
+  // debounce slider drags a little so the animation isn't constantly restarted
+  clearTimeout(jobTimer);
+  jobTimer = setTimeout(() => {
+    job = createAnnealer(dist, voters, S.mode, ITERS);
+    if (reduceMotion) { job.step(Infinity); job.finish(); job = null; }
+    $('status').hidden = !job;
+    refreshStats(false);
+  }, 60);
+  refreshStats(false);
+}
+
+// ---------- Stats ----------
+function computeStats() {
+  const a = tally(dist, voters);
+  const per = new Int32Array(K), sx = new Float64Array(K), sy = new Float64Array(K);
+  for (let i = 0; i < N; i++) {
+    const d = dist[i], x = i % COLS, y = (i / COLS) | 0;
+    sx[d] += x; sy[d] += y;
+    if (x === 0 || dist[i - 1] !== d) per[d]++;
+    if (x === COLS - 1 || dist[i + 1] !== d) per[d]++;
+    if (y === 0 || dist[i - COLS] !== d) per[d]++;
+    if (y === ROWS - 1 || dist[i + COLS] !== d) per[d]++;
+  }
+  const rep = new Int32Array(K).fill(-1), repD = new Float64Array(K).fill(Infinity);
+  for (let i = 0; i < N; i++) {
+    const d = dist[i], x = i % COLS, y = (i / COLS) | 0;
+    const dd = (x - sx[d] / SIZE) ** 2 + (y - sy[d] / SIZE) ** 2;
+    if (dd < repD[d]) { repD[d] = dd; rep[d] = i; }
+  }
+  let seatsA = 0, wA = 0, wB = 0, toss = 0, pp = 0;
+  const districts = [];
+  for (let d = 0; d < K; d++) {
+    const av = a[d], bv = SIZE - av, aWins = av >= MAJ, w = Math.max(av, bv);
+    if (aWins) { seatsA++; wA += av - MAJ; wB += bv; } else { wB += bv - MAJ; wA += av; }
+    if (w <= 15) toss++;
+    const shape = (4 * Math.PI * SIZE) / (per[d] * per[d]);
+    pp += shape;
+    const tag = w <= 15 ? 'Toss-up' : w <= 18 ? 'Leans' : w <= 20 ? 'Safe' : 'Packed';
+    districts.push({ a: av, b: bv, aWins, tag, rep: rep[d] });
+  }
+  const nA = voters.reduce((s, x) => s + x, 0);
+  return { districts, seatsA, seatsB: K - seatsA, nA, nB: N - nA, toss, gap: (wA - wB) / N, shape: pp / K, fairA: Math.round((K * nA) / N) };
+}
+
+// Build district cards + seats once
+const cards = [];
+for (let d = 0; d < K; d++) {
+  const el = document.createElement('div');
+  el.className = 'dcard';
+  el.innerHTML = `<div class="top"><span class="num">D${d + 1}</span><span class="tag"></span></div>
+    <div class="minibar"><i style="background:var(--A)"></i><i style="background:var(--B)"></i></div>
+    <div class="counts"><span style="color:var(--A)"></span><span style="color:var(--B)"></span></div>
+    <div class="winner"></div>`;
+  el.addEventListener('mouseenter', () => { hover = d; });
+  el.addEventListener('mouseleave', () => { hover = -1; });
+  $('districts').appendChild(el);
+  cards.push(el);
+}
+const seatEls = [];
+for (let s = 0; s < K; s++) { const e = document.createElement('div'); e.className = 'seat'; $('seats').appendChild(e); seatEls.push(e); }
+let lastSeatKey = '';
+
+const EXPLAIN = {
+  compact: () => ['Compact and neutral', `Lines are drawn as tidy shapes without looking at anyone's music taste. The result depends on geography. When fans cluster in towns, the clustered side can pile up "wasted" votes in lopsided districts.`],
+  favorA: () => ['Packing and cracking', `The map-maker packs ${fansB()} into a few districts they win by landslides, then cracks the rest across districts where they fall just short. Look for snaky, stretched shapes.`],
+  favorB: () => ['Packing and cracking', `The map-maker packs ${fansA()} into a few districts they win by landslides, then cracks the rest across districts where they fall just short. Look for snaky, stretched shapes.`],
+  competitive: () => ['Every race is close', `Each district is drawn as near to 50/50 as the voters allow. Voters get real choices, but a small swing could flip many seats at once, so the delegation can change a lot from one election to the next.`],
+  proportional: () => ['Seats match votes', `Lines are drawn so each fanbase's share of seats is as close as possible to its share of votes. With winner-take-all districts, this only happens if someone draws it on purpose.`],
+};
+
+function refreshStats(forceSeats) {
+  stats = computeStats();
+  const st = stats, pA = Math.round((st.nA / N) * 100);
+  const A = fansA(), B = fansB();
+  $('vbA').style.width = `${(st.nA / N) * 100}%`; $('vbA').style.background = 'var(--A)';
+  $('vbB').style.width = `${(st.nB / N) * 100}%`; $('vbB').style.background = 'var(--B)';
+  $('vlA').innerHTML = `<span style="color:var(--A)">${A} ${pA}%</span>`;
+  $('vlB').innerHTML = `<span style="color:var(--B)">${100 - pA}% ${B}</span>`;
+  $('seatsA').textContent = st.seatsA; $('seatsB').textContent = st.seatsB;
+
+  const key = `${st.seatsA}|${S.a}|${S.b}`;
+  for (let s = 0; s < K; s++) {
+    const isA = s < st.seatsA, e = seatEls[s];
+    e.style.background = isA ? 'var(--A)' : 'var(--B)';
+    e.classList.toggle('sq', !isA);
+    e.title = isA ? A : B;
+    if (key !== lastSeatKey && (forceSeats || s === st.seatsA || s === st.seatsA - 1)) {
+      e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop');
+    }
+  }
+  lastSeatKey = key;
+
+  const diff = st.seatsA - st.fairA;
+  const wonPct = (n) => `${n} of 10 seats`;
+  let v;
+  if (st.nA === st.nB) v = `A dead-even vote, but <span class="a">${A}</span> won ${wonPct(st.seatsA)}.`;
+  else {
+    const winVotes = st.nA > st.nB, W = winVotes ? A : B, cls = winVotes ? 'a' : 'b';
+    const wp = winVotes ? pA : 100 - pA, ws = winVotes ? st.seatsA : st.seatsB;
+    v = `<span class="${cls}">${W}</span> won ${wp}% of the votes and ${wonPct(ws)}.`;
+    if (ws < 5) v += ` The minority took control.`;
+  }
+  if (Math.abs(diff) >= 2) v += ` That's ${Math.abs(diff)} seats away from a proportional result.`;
+  $('verdict').innerHTML = v;
+
+  $('mFair').innerHTML = `<span style="color:var(--A)">${st.fairA}</span> – <span style="color:var(--B)">${K - st.fairA}</span>`;
+  $('mFairS').textContent = diff === 0 ? 'This map hits it exactly' : `This map is off by ${Math.abs(diff)} seat${Math.abs(diff) > 1 ? 's' : ''}`;
+  $('mToss').textContent = `${st.toss} / 10`;
+  const g = Math.round(Math.abs(st.gap) * 100);
+  $('mGap').textContent = `${g}%`;
+  $('mGapS').textContent = g === 0 ? 'Neither side wastes more' : `Favors ${st.gap > 0 ? B : A}${g >= 7 ? '. Above the 7% red flag.' : ''}`;
+  $('mShape').textContent = st.shape.toFixed(2);
+  $('mShapeS').textContent = st.shape >= 0.5 ? 'Tidy (1.00 = a circle)' : st.shape >= 0.36 ? 'Stretched (1.00 = a circle)' : 'Snaky (1.00 = a circle)';
+  const [t, p] = EXPLAIN[S.mode]();
+  $('explain').innerHTML = `<b>${t}</b><p>${p}</p>`;
+
+  st.districts.forEach((d, i) => {
+    const el = cards[i];
+    const tag = el.querySelector('.tag');
+    tag.textContent = d.tag; tag.className = 'tag' + (d.tag === 'Toss-up' ? ' toss' : d.tag === 'Packed' ? ' packed' : '');
+    const bars = el.querySelectorAll('.minibar i');
+    bars[0].style.width = `${(d.a / SIZE) * 100}%`; bars[1].style.width = `${(d.b / SIZE) * 100}%`;
+    const c = el.querySelectorAll('.counts span');
+    c[0].textContent = `${d.a} ${A}`; c[1].textContent = `${d.b}`;
+    el.querySelector('.winner').textContent = `Winner: ${d.aWins ? A : B}`;
+    el.style.borderColor = '';
+  });
+  updateCaption();
+}
+
+function updateCaption() {
+  cards.forEach((c, i) => c.classList.toggle('hot', i === hover));
+  if (hover < 0 || !stats) { $('caption').textContent = 'Hover or tap a district to see who lives there.'; return; }
+  const d = stats.districts[hover];
+  const W = d.aWins ? fansA() : fansB();
+  $('caption').innerHTML = `<strong>District ${hover + 1}</strong>: ${d.a} ${fansA()}, ${d.b} ${fansB()}. <strong>${W}</strong> win (${d.tag.toLowerCase()}).`;
+}
+
+// ---------- Canvas ----------
+const canvas = $('map'), ctx = canvas.getContext('2d');
+let G = { dpr: 1, w: 0, h: 0, ox: 0, oy: 0, cs: 0 };
+function resize() {
+  const w = canvas.clientWidth || canvas.parentElement.clientWidth;
+  const pad = Math.max(8, w * 0.012);
+  const cs = (w - pad * 2 - 6) / COLS;
+  const h = cs * ROWS + pad * 2 + 10;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.style.height = `${h}px`;
+  canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  G = { dpr, w, h, ox: pad, oy: pad, cs };
+}
+new ResizeObserver(resize).observe(canvas.parentElement);
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+function cellFromEvent(e) {
+  const r = canvas.getBoundingClientRect();
+  const px = e.clientX - r.left, py = e.clientY - r.top;
+  pointer = { x: px, y: py };
+  const x = Math.floor((px - G.ox) / G.cs), y = Math.floor((py - G.oy) / G.cs);
+  if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return -1;
+  return y * COLS + x;
+}
+canvas.addEventListener('pointermove', (e) => { const c = cellFromEvent(e); const h = c < 0 ? -1 : dist[c]; if (h !== hover) { hover = h; updateCaption(); } });
+canvas.addEventListener('pointerdown', (e) => { const c = cellFromEvent(e); hover = c < 0 ? -1 : dist[c]; updateCaption(); });
+canvas.addEventListener('pointerleave', () => { pointer = null; hover = -1; updateCaption(); });
+
+function targetFill(d) {
+  const info = stats.districts[d];
+  const w = Math.max(info.a, info.b);
+  const strength = 0.2 + 0.32 * Math.min(1, (w - 14) / 10);
+  return mix(LAND, info.aWins ? colA : colB, strength);
+}
+
+function drawVoter(cx, cy, r, col, isA, t, ph) {
+  const bob = reduceMotion ? 0 : Math.sin(t * 2.2 + ph) * r * 0.1;
+  // ground shadow
+  ctx.fillStyle = 'rgba(6,10,32,.35)';
+  ctx.beginPath(); ctx.ellipse(cx, cy + r * 0.98, r * 0.78 - bob * 0.3, r * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+  const y = cy - bob;
+  ctx.fillStyle = css(col);
+  if (isA) { ctx.beginPath(); ctx.arc(cx, y, r, 0, Math.PI * 2); ctx.fill(); }
+  else { roundRect(cx - r * 0.92, y - r * 0.92, r * 1.84, r * 1.84, r * 0.5); ctx.fill(); }
+  // flat shading crescent
+  ctx.save(); ctx.clip();
+  ctx.fillStyle = 'rgba(10,16,41,.18)';
+  ctx.beginPath(); ctx.arc(cx + r * 0.45, y + r * 0.5, r * 1.05, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.28)';
+  ctx.beginPath(); ctx.arc(cx - r * 0.45, y - r * 0.5, r * 0.22, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // eyes
+  const blink = !reduceMotion && ((t * 0.37 + ph * 1.7) % 4) < 0.07;
+  const ex = r * 0.34, ey = y - r * 0.08, er = r * 0.26;
+  let lx = 0, ly = 0;
+  if (pointer) { const dx = pointer.x - cx, dy = pointer.y - y, m = Math.hypot(dx, dy) || 1; lx = (dx / m) * er * 0.4; ly = (dy / m) * er * 0.4; }
+  else { lx = Math.sin(ph * 3) * er * 0.3; ly = er * 0.1; }
+  for (const s of [-1, 1]) {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath(); ctx.ellipse(cx + s * ex, ey, er, blink ? er * 0.12 : er, 0, 0, Math.PI * 2); ctx.fill();
+    if (!blink) { ctx.fillStyle = '#0A1029'; ctx.beginPath(); ctx.arc(cx + s * ex + lx, ey + ly, er * 0.52, 0, Math.PI * 2); ctx.fill(); }
+  }
+}
+
+function draw(t) {
+  const { dpr, w, h, ox, oy, cs } = G;
+  if (!cs) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const bw = cs * COLS, bh = cs * ROWS, R = cs * 0.6;
+  // glow + flat drop shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(90,120,255,.35)'; ctx.shadowBlur = 30;
+  ctx.fillStyle = css(LAND); roundRect(ox, oy, bw, bh, R); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(4,7,22,.45)'; roundRect(ox + 4, oy + 8, bw, bh, R); ctx.fill();
+
+  ctx.save();
+  roundRect(ox, oy, bw, bh, R); ctx.clip();
+  for (let i = 0; i < N; i++) {
+    const x = i % COLS, y = (i / COLS) | 0;
+    let c = [fill[i * 3], fill[i * 3 + 1], fill[i * 3 + 2]];
+    if (hover >= 0 && dist[i] !== hover) c = mix(c, VOID, 0.45);
+    else if (hover >= 0) c = mix(c, CREAM, 0.08);
+    ctx.fillStyle = css(c);
+    ctx.fillRect(ox + x * cs - 0.5, oy + y * cs - 0.5, cs + 1, cs + 1);
+  }
+  // voters
+  const r = cs * 0.3;
+  for (let i = 0; i < N; i++) {
+    const x = i % COLS, y = (i / COLS) | 0;
+    let col = voters[i] ? colA : colB;
+    if (hover >= 0 && dist[i] !== hover) col = mix(col, VOID, 0.5);
+    drawVoter(ox + (x + 0.5) * cs, oy + (y + 0.47) * cs, r, col, voters[i] === 1, t, world.phase[i]);
+  }
+  // district borders
+  ctx.strokeStyle = css(CREAM);
+  ctx.lineWidth = Math.max(2, cs * 0.1);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const x = i % COLS, y = (i / COLS) | 0;
+    if (x < COLS - 1 && dist[i] !== dist[i + 1]) { ctx.moveTo(ox + (x + 1) * cs, oy + y * cs); ctx.lineTo(ox + (x + 1) * cs, oy + (y + 1) * cs); }
+    if (y < ROWS - 1 && dist[i] !== dist[i + COLS]) { ctx.moveTo(ox + x * cs, oy + (y + 1) * cs); ctx.lineTo(ox + (x + 1) * cs, oy + (y + 1) * cs); }
+  }
+  ctx.stroke();
+  ctx.restore();
+  ctx.strokeStyle = css(CREAM); ctx.lineWidth = Math.max(3, cs * 0.14);
+  roundRect(ox, oy, bw, bh, R); ctx.stroke();
+
+  // district number badges
+  const br = Math.max(9, cs * 0.3);
+  ctx.font = `800 ${Math.round(br * 1.05)}px "Baloo 2", system-ui, sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  stats.districts.forEach((d, k) => {
+    const i = d.rep, x = i % COLS, y = (i / COLS) | 0;
+    const cx = ox + x * cs + br * 0.9, cy = oy + y * cs + br * 0.9;
+    ctx.fillStyle = css(VOID, 0.85);
+    ctx.beginPath(); ctx.arc(cx, cy, br, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = Math.max(2, br * 0.22); ctx.strokeStyle = css(d.aWins ? colA : colB);
+    ctx.stroke();
+    ctx.fillStyle = css(CREAM);
+    ctx.fillText(String(k + 1), cx, cy + br * 0.08);
+  });
+}
+
+// ---------- Loop ----------
+let frameNo = 0;
+function frame(ts) {
+  const t = ts / 1000;
+  if (job) {
+    const done = job.step(1400);
+    if (done) { job.finish(); job = null; $('status').hidden = true; refreshStats(false); }
+    else {
+      $('statusText').textContent = `Drawing districts ${Math.round(job.progress * 100)}%`;
+      if (frameNo % 3 === 0) refreshStats(false);
+    }
+  }
+  const k = reduceMotion ? 1 : 0.14;
+  const targets = stats.districts.map((_, d) => targetFill(d));
+  for (let i = 0; i < N; i++) {
+    const tc = targets[dist[i]];
+    for (let j = 0; j < 3; j++) fill[i * 3 + j] += (tc[j] - fill[i * 3 + j]) * k;
+  }
+  draw(t);
+  frameNo++;
+  requestAnimationFrame(frame);
+}
+
+// ---------- Stars ----------
+(function stars() {
+  const s = []; const rng = mulberry32(7);
+  for (let i = 0; i < 140; i++) {
+    const a = 0.25 + rng() * 0.6;
+    s.push(`${(rng() * 100).toFixed(2)}vw ${(rng() * 100).toFixed(2)}vh 0 ${rng() < 0.15 ? 1 : 0}px rgba(247,242,230,${a.toFixed(2)})`);
+  }
+  $('stars').style.boxShadow = s.join(',');
+  if (!reduceMotion) $('stars').style.animation = 'twinkle 5s ease-in-out infinite';
+})();
+
+// ---------- Boot: a finished neutral map on first paint ----------
+world = makeWorld(S.seed);
+voters = assignVoters(world, S.share, S.cluster);
+dist = snakePartition();
+{ const an = createAnnealer(dist, voters, 'compact', ITERS); an.step(Infinity); an.finish(); }
+applyColors();
+refreshStats(true);
+for (let i = 0; i < N; i++) { const c = targetFill(dist[i]); fill.set(c, i * 3); }
+resize();
+requestAnimationFrame(frame);
+// APP END
+</script>
+</body>
+</html>
