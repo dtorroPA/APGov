@@ -102,6 +102,10 @@ h3 { font-family: var(--display); font-weight: 600; font-size: 13px; letter-spac
 .fan-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 10px; }
 .swatch { width: 22px; height: 22px; border-radius: 50%; position: relative; box-shadow: inset -3px -3px 0 rgba(0,0,0,.18); }
 .swatch.sq { border-radius: 7px; }
+.av { background: center / contain no-repeat; box-shadow: none !important; border-radius: 0 !important; }
+.fan-row .swatch.av { width: 30px; height: 30px; }
+.fan-row { grid-template-columns: 30px minmax(0, 1fr); }
+.legend .swatch.av { width: 22px; height: 22px; }
 select, button { font: inherit; color: var(--ink); }
 select {
   width: 100%; min-width: 0;
@@ -162,15 +166,9 @@ input[type="range"] { width: 100%; accent-color: var(--sun); }
 
 .seats { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; }
 .seat {
-  aspect-ratio: 1; max-width: 100%; border-radius: 50%; position: relative; background: var(--muted);
-  box-shadow: inset -3px -3px 0 rgba(0,0,0,.2);
+  aspect-ratio: 1; max-width: 100%; position: relative;
+  background: center / contain no-repeat;
 }
-.seat.sq { border-radius: 28%; }
-.seat::before, .seat::after {
-  content: ""; position: absolute; top: 34%; width: 22%; height: 26%; border-radius: 50%; background: #fff;
-  box-shadow: inset 0 -2px 0 2px #0A1029;
-}
-.seat::before { left: 22%; } .seat::after { right: 22%; }
 .seat.pop { animation: pop .45s cubic-bezier(.3,1.6,.5,1); }
 @keyframes pop { 0% { transform: scale(.4); } 100% { transform: scale(1); } }
 .seat-score { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--display); font-weight: 800; }
@@ -224,7 +222,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   <header>
     <div class="eyebrow">AP Government · Congress &amp; Redistricting</div>
     <h1>Gerrymander <span>Tour</span></h1>
-    <p class="lede">A state of 270 music fans needs 10 congressional districts. Every district holds exactly 27 voters. The map-maker's goal decides who wins. Pick two fanbases, choose a goal, and watch the lines move.</p>
+    <p class="lede">A state of 270 cartoon music fans needs 10 congressional districts. Every district holds exactly 27 voters. The map-maker's goal decides who wins. Pick two fanbases, choose a goal, and watch the lines move.</p>
   </header>
 
   <div class="board">
@@ -233,10 +231,10 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
 
       <div class="field">
         <label for="fanA">Fanbase A</label>
-        <div class="fan-row"><span class="swatch" id="swA"></span><select id="fanA"></select></div>
+        <div class="fan-row"><span class="swatch av" id="swA"></span><select id="fanA"></select></div>
         <div class="vs">VS</div>
         <label for="fanB">Fanbase B</label>
-        <div class="fan-row"><span class="swatch sq" id="swB"></span><select id="fanB"></select></div>
+        <div class="fan-row"><span class="swatch av" id="swB"></span><select id="fanB"></select></div>
         <p class="hint" id="colorHint" hidden>Colors were adjusted so the two fanbases are easy to tell apart.</p>
       </div>
 
@@ -262,10 +260,10 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
           <span class="card"><span class="icon"><svg viewBox="0 0 20 20" fill="none" stroke="#F7F2E6" stroke-width="2"><rect x="3" y="3" width="14" height="14" rx="3"/><path d="M10 3v14M3 10h14"/></svg></span>
           <span><b>Compact &amp; neutral</b><small>Tidy shapes. Ignores who lives where.</small></span></span></label>
         <label class="goal"><input type="radio" name="goal" id="g-favorA" value="favorA">
-          <span class="card"><span class="icon"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="var(--A)"/></svg></span>
+          <span class="card"><span class="icon av" id="iconA"></span>
           <span><b>Favor <span class="nameA">A</span></b><small>Pack and crack the other side.</small></span></span></label>
         <label class="goal"><input type="radio" name="goal" id="g-favorB" value="favorB">
-          <span class="card"><span class="icon"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="4" fill="var(--B)"/></svg></span>
+          <span class="card"><span class="icon av" id="iconB"></span>
           <span><b>Favor <span class="nameB">B</span></b><small>Pack and crack the other side.</small></span></span></label>
         <label class="goal"><input type="radio" name="goal" id="g-competitive" value="competitive">
           <span class="card"><span class="icon"><svg viewBox="0 0 20 20" fill="none" stroke="#FFCB47" stroke-width="2" stroke-linecap="round"><path d="M10 3v14M4 7l6-2 6 2M4 7l-2 5h4zM16 7l-2 5h4z"/></svg></span>
@@ -283,9 +281,9 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     <section id="mapArea" aria-label="State map">
       <div class="map-bar">
         <div class="legend">
-          <span><i class="swatch" id="lgA"></i><span class="fansA">A</span></span>
-          <span><i class="swatch sq" id="lgB"></i><span class="fansB">B</span></span>
-          <span>Each blob = 1 voter</span>
+          <span><i class="swatch av" id="lgA"></i><span class="fansA">A</span></span>
+          <span><i class="swatch av" id="lgB"></i><span class="fansB">B</span></span>
+          <span>Each fan = 1 voter</span>
         </div>
         <div class="status" id="status" hidden><span class="dot"></span><span id="statusText">Drawing districts</span></div>
       </div>
@@ -356,7 +354,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     </div>
   </section>
 
-  <footer>Fanbases stand in for political parties. A classroom simulation, not affiliated with any artist.</footer>
+  <footer>Fanbases stand in for political parties. The fans are original cartoon characters, not drawings of the artists. A classroom simulation, not affiliated with any artist.</footer>
 </div>
 <script>
 // ENGINE START
@@ -520,17 +518,17 @@ function createAnnealer(dist, v, mode, iters) {
 // ENGINE END
 // APP START
 const ARTISTS = [
-  { id: 'taylor', name: 'Taylor Swift', fans: 'Swifties', color: '#FFB627' },
-  { id: 'olivia', name: 'Olivia Rodrigo', fans: 'Livies', color: '#A27BFF' },
-  { id: 'chappell', name: 'Chappell Roan', fans: 'Chappell fans', color: '#FF5FA8' },
-  { id: 'drake', name: 'Drake', fans: 'Drake fans', color: '#38D6E3' },
-  { id: 'kendrick', name: 'Kendrick Lamar', fans: 'Kendrick fans', color: '#FF5A4E' },
-  { id: 'billie', name: 'Billie Eilish', fans: 'Billie fans', color: '#A8E85F' },
-  { id: 'badbunny', name: 'Bad Bunny', fans: 'Bad Bunny fans', color: '#4C8DFF' },
-  { id: 'beyonce', name: 'Beyoncé', fans: 'BeyHive', color: '#F3E7D3' },
-  { id: 'sabrina', name: 'Sabrina Carpenter', fans: 'Sabrina fans', color: '#FF9E7A' },
-  { id: 'sza', name: 'SZA', fans: 'SZA fans', color: '#3FE0A5' },
-  { id: 'morgan', name: 'Morgan Wallen', fans: 'Morgan Wallen fans', color: '#D8A46A' },
+  { id: 'taylor', acc: 'star', name: 'Taylor Swift', fans: 'Swifties', color: '#FFB627' },
+  { id: 'olivia', acc: 'butterfly', name: 'Olivia Rodrigo', fans: 'Livies', color: '#A27BFF' },
+  { id: 'chappell', acc: 'cowboy', name: 'Chappell Roan', fans: 'Chappell fans', color: '#FF5FA8' },
+  { id: 'drake', acc: 'headphones', name: 'Drake', fans: 'Drake fans', color: '#38D6E3' },
+  { id: 'kendrick', acc: 'crown', name: 'Kendrick Lamar', fans: 'Kendrick fans', color: '#FF5A4E' },
+  { id: 'billie', acc: 'beanie', name: 'Billie Eilish', fans: 'Billie fans', color: '#A8E85F' },
+  { id: 'badbunny', acc: 'shades', name: 'Bad Bunny', fans: 'Bad Bunny fans', color: '#4C8DFF' },
+  { id: 'beyonce', acc: 'bee', name: 'Beyoncé', fans: 'BeyHive', color: '#F3E7D3' },
+  { id: 'sabrina', acc: 'bow', name: 'Sabrina Carpenter', fans: 'Sabrina fans', color: '#FF9E7A' },
+  { id: 'sza', acc: 'flower', name: 'SZA', fans: 'SZA fans', color: '#3FE0A5' },
+  { id: 'morgan', acc: 'cap', name: 'Morgan Wallen', fans: 'Morgan Wallen fans', color: '#D8A46A' },
 ];
 const FALLBACK = ['#4C8DFF', '#FFB627', '#FF5FA8', '#A8E85F', '#38D6E3', '#A27BFF'];
 const ITERS = 120000;
@@ -550,7 +548,7 @@ let world, voters, dist, job = null, stats = null;
 let colA = hex2rgb('#FFB627'), colB = hex2rgb('#A27BFF');
 const LAND = hex2rgb('#26346E'), VOID = hex2rgb('#0A1029'), CREAM = hex2rgb('#F7F2E6');
 const fill = new Float32Array(N * 3).fill(0);
-let hover = -1, pointer = null;
+let hover = -1, pointer = null, avatarImgs = { A: 'none', B: 'none' };
 
 const artist = (id) => ARTISTS.find((x) => x.id === id);
 const fansA = () => artist(S.a).fans, fansB = () => artist(S.b).fans;
@@ -575,8 +573,11 @@ function applyColors() {
   const root = document.documentElement.style;
   root.setProperty('--A', artist(S.a).color);
   root.setProperty('--B', b);
-  for (const id of ['swA', 'lgA']) $(id).style.background = 'var(--A)';
-  for (const id of ['swB', 'lgB']) $(id).style.background = 'var(--B)';
+  const urlA = `url(${avatarURL(S.a, colA, true)})`, urlB = `url(${avatarURL(S.b, colB, false)})`;
+  for (const id of ['swA', 'lgA', 'iconA']) $(id).style.backgroundImage = urlA;
+  for (const id of ['swB', 'lgB', 'iconB']) $(id).style.backgroundImage = urlB;
+  avatarImgs = { A: urlA, B: urlB };
+  lastSeatKey = '';
   document.querySelectorAll('.nameA,.fansA').forEach((e) => (e.textContent = fansA()));
   document.querySelectorAll('.nameB,.fansB').forEach((e) => (e.textContent = fansB()));
   updateShareLabels();
@@ -702,8 +703,7 @@ function refreshStats(forceSeats) {
   const key = `${st.seatsA}|${S.a}|${S.b}`;
   for (let s = 0; s < K; s++) {
     const isA = s < st.seatsA, e = seatEls[s];
-    e.style.background = isA ? 'var(--A)' : 'var(--B)';
-    e.classList.toggle('sq', !isA);
+    e.style.backgroundImage = isA ? avatarImgs.A : avatarImgs.B;
     e.title = isA ? A : B;
     if (key !== lastSeatKey && (forceSeats || s === st.seatsA || s === st.seatsA - 1)) {
       e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop');
@@ -758,7 +758,8 @@ function updateCaption() {
 }
 
 // ---------- Canvas ----------
-const canvas = $('map'), ctx = canvas.getContext('2d');
+const canvas = $('map');
+let ctx = canvas.getContext('2d');
 let G = { dpr: 1, w: 0, h: 0, ox: 0, oy: 0, cs: 0 };
 function resize() {
   const w = canvas.clientWidth || canvas.parentElement.clientWidth;
@@ -797,7 +798,7 @@ function targetFill(d) {
   return mix(LAND, info.aWins ? colA : colB, strength);
 }
 
-function drawVoter(cx, cy, r, col, isA, t, ph) {
+function drawVoter(cx, cy, r, col, isA, t, ph, acc) {
   const bob = reduceMotion ? 0 : Math.sin(t * 2.2 + ph) * r * 0.1;
   // ground shadow
   ctx.fillStyle = 'rgba(6,10,32,.35)';
@@ -824,6 +825,114 @@ function drawVoter(cx, cy, r, col, isA, t, ph) {
     ctx.beginPath(); ctx.ellipse(cx + s * ex, ey, er, blink ? er * 0.12 : er, 0, 0, Math.PI * 2); ctx.fill();
     if (!blink) { ctx.fillStyle = '#0A1029'; ctx.beginPath(); ctx.arc(cx + s * ex + lx, ey + ly, er * 0.52, 0, Math.PI * 2); ctx.fill(); }
   }
+  if (acc) drawAcc(acc, cx, y, r, isA);
+}
+
+// Fan gear: original accessories that nod to each fanbase (not likenesses of the artists).
+function poly(pts, color) { ctx.fillStyle = color; ctx.beginPath(); pts.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.fill(); }
+function dot(x, y, rad, color) { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill(); }
+function drawAcc(kind, cx, y, r, isA) {
+  const top = y - r * (isA ? 1 : 0.92);
+  ctx.save();
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  switch (kind) {
+    case 'star': { // sparkly star hair clip
+      const sx = cx + r * 0.5, sy = top + r * 0.12, R = r * 0.42, pts = [];
+      for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + (k * Math.PI) / 5, rr = k % 2 ? R * 0.45 : R; pts.push([sx + Math.cos(a) * rr, sy + Math.sin(a) * rr]); }
+      poly(pts, '#FFF3B0');
+      dot(cx - r * 0.55, top + r * 0.05, r * 0.08, '#FFFFFF');
+      break;
+    }
+    case 'butterfly': { // butterfly hair clip
+      const bx = cx - r * 0.5, by = top + r * 0.1;
+      ctx.fillStyle = '#FFC6EC';
+      for (const s of [-1, 1]) {
+        ctx.beginPath(); ctx.ellipse(bx + s * r * 0.2, by - r * 0.08, r * 0.2, r * 0.15, s * 0.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(bx + s * r * 0.16, by + r * 0.13, r * 0.13, r * 0.1, -s * 0.4, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.strokeStyle = '#3B2366'; ctx.lineWidth = r * 0.08;
+      ctx.beginPath(); ctx.moveTo(bx, by - r * 0.18); ctx.lineTo(bx, by + r * 0.2); ctx.stroke();
+      break;
+    }
+    case 'cowboy': { // pink-band cowboy hat
+      ctx.fillStyle = '#FFF1F7';
+      ctx.beginPath(); ctx.ellipse(cx, top + r * 0.02, r * 1.2, r * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+      roundRect(cx - r * 0.5, top - r * 0.52, r, r * 0.56, r * 0.22); ctx.fill();
+      ctx.fillStyle = '#E8337F'; ctx.fillRect(cx - r * 0.5, top - r * 0.12, r, r * 0.12);
+      break;
+    }
+    case 'headphones': {
+      ctx.strokeStyle = '#1B2140'; ctx.lineWidth = r * 0.17;
+      ctx.beginPath(); ctx.arc(cx, y, r * 1.05, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke();
+      ctx.fillStyle = '#F7F2E6';
+      for (const s of [-1, 1]) { roundRect(cx + s * r * 1.0 - r * 0.2, y - r * 0.35, r * 0.4, r * 0.55, r * 0.15); ctx.fill(); }
+      break;
+    }
+    case 'crown': {
+      const w = r * 0.62, b = top + r * 0.12, h = r * 0.5;
+      poly([[cx - w, b], [cx - w, b - h * 0.6], [cx - w * 0.5, b - h * 0.25], [cx, b - h], [cx + w * 0.5, b - h * 0.25], [cx + w, b - h * 0.6], [cx + w, b]], '#FFD447');
+      dot(cx, b - h * 0.32, r * 0.08, '#FF5A4E');
+      break;
+    }
+    case 'beanie': {
+      ctx.fillStyle = '#20263F';
+      ctx.beginPath(); ctx.arc(cx, top + r * 0.42, r * 0.9, Math.PI, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#C8FF5A'; ctx.fillRect(cx - r * 0.92, top + r * 0.22, r * 1.84, r * 0.2);
+      dot(cx, top - r * 0.5, r * 0.17, '#C8FF5A');
+      break;
+    }
+    case 'shades': { // sunglasses over the eyes
+      const ey = y - r * 0.08;
+      ctx.fillStyle = '#141833';
+      for (const s of [-1, 1]) { roundRect(cx + s * r * 0.36 - r * 0.32, ey - r * 0.2, r * 0.64, r * 0.42, r * 0.14); ctx.fill(); }
+      ctx.fillRect(cx - r * 0.1, ey - r * 0.12, r * 0.2, r * 0.08);
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      for (const s of [-1, 1]) ctx.fillRect(cx + s * r * 0.36 - r * 0.18, ey - r * 0.12, r * 0.1, r * 0.1);
+      break;
+    }
+    case 'bee': { // bee antennae
+      ctx.strokeStyle = '#2B2140'; ctx.lineWidth = r * 0.1;
+      for (const s of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(cx + s * r * 0.25, top + r * 0.1);
+        ctx.quadraticCurveTo(cx + s * r * 0.3, top - r * 0.45, cx + s * r * 0.6, top - r * 0.5); ctx.stroke();
+        dot(cx + s * r * 0.6, top - r * 0.5, r * 0.15, '#FFC93C');
+      }
+      break;
+    }
+    case 'bow': {
+      const bx = cx, by = top - r * 0.02;
+      poly([[bx, by], [bx - r * 0.62, by - r * 0.34], [bx - r * 0.62, by + r * 0.3]], '#FF6FAE');
+      poly([[bx, by], [bx + r * 0.62, by - r * 0.34], [bx + r * 0.62, by + r * 0.3]], '#FF6FAE');
+      dot(bx, by, r * 0.15, '#FFD0E4');
+      break;
+    }
+    case 'flower': {
+      const fx = cx - r * 0.55, fy = top + r * 0.12;
+      for (let k = 0; k < 5; k++) { const a = (k * 2 * Math.PI) / 5; dot(fx + Math.cos(a) * r * 0.2, fy + Math.sin(a) * r * 0.2, r * 0.15, '#FFE36E'); }
+      dot(fx, fy, r * 0.12, '#FF7A59');
+      break;
+    }
+    case 'cap': { // trucker cap with the brim off to the side
+      ctx.fillStyle = '#35553F';
+      ctx.beginPath(); ctx.arc(cx, top + r * 0.4, r * 0.85, Math.PI, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#F7F2E6';
+      ctx.beginPath(); ctx.arc(cx - r * 0.1, top + r * 0.4, r * 0.45, Math.PI, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#2A4433';
+      ctx.beginPath(); ctx.ellipse(cx + r * 0.85, top + r * 0.38, r * 0.5, r * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+  }
+  ctx.restore();
+}
+
+// Render one fan avatar to an image for swatches, legend and seats.
+function avatarURL(id, col, isA) {
+  const off = document.createElement('canvas'); off.width = off.height = 96;
+  const keep = ctx, keepPtr = pointer;
+  ctx = off.getContext('2d'); pointer = null;
+  drawVoter(48, 56, 28, col, isA, 0, 1, artist(id).acc);
+  ctx = keep; pointer = keepPtr;
+  return off.toDataURL();
 }
 
 function draw(t) {
@@ -850,12 +959,15 @@ function draw(t) {
     ctx.fillRect(ox + x * cs - 0.5, oy + y * cs - 0.5, cs + 1, cs + 1);
   }
   // voters
-  const r = cs * 0.3;
+  const r = cs * 0.28;
   for (let i = 0; i < N; i++) {
     const x = i % COLS, y = (i / COLS) | 0;
-    let col = voters[i] ? colA : colB;
-    if (hover >= 0 && dist[i] !== hover) col = mix(col, VOID, 0.5);
-    drawVoter(ox + (x + 0.5) * cs, oy + (y + 0.47) * cs, r, col, voters[i] === 1, t, world.phase[i]);
+    const isA = voters[i] === 1;
+    ctx.globalAlpha = hover >= 0 && dist[i] !== hover ? 0.4 : 1;
+    drawVoter(ox + (x + 0.5) * cs, oy + (y + 0.52) * cs, r, isA ? colA : colB, isA, t, world.phase[i], artist(isA ? S.a : S.b).acc);
+  }
+  ctx.globalAlpha = 1;
+  {
   }
   // district borders
   ctx.strokeStyle = css(CREAM);
